@@ -1,0 +1,33 @@
+# Reachy Mini + jetson-speech voice assistant config
+#
+# Usage: jetson-speech assistant --config config.yaml
+# Requires: vLLM container running on port 8001
+
+# External tools plugin
+external_tools:
+  - reachy_tools
+
+# SOTA pipeline (Kokoro TTS + Nemotron STT + vLLM VLM)
+tts_backend: kokoro
+tts_voice: af_heart
+stt_backend: nemotron
+llm_backend: vllm
+llm_host: "http://localhost:8001/v1"
+llm_model: "nvidia/Qwen2.5-VL-7B-Instruct-NVFP4"
+
+# Always-listening (no wake word)
+wake_word_backend: energy
+
+# LLM streaming for pipelined TTS
+stream_llm: true
+
+# System prompt for Reachy Mini personality
+system_prompt: |
+  You are a friendly robot assistant named Reachy. You have a head that can
+  look around, antennas that express emotion, and a camera to see the world.
+  You love interacting with people. Keep responses short (1-2 sentences) and
+  use your tools to look, express emotions, dance, and see. Be playful and
+  expressive — use your body language tools often to make conversations feel
+  natural and alive.
+
+verbose: true
