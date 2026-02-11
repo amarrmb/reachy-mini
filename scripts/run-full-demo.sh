@@ -67,7 +67,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BASKD_DIR="$(dirname "$(dirname "$PROJECT_DIR")")"
 
 # ── Parse flags ──
 START_DAEMON=true
@@ -87,11 +86,7 @@ done
 # ── Environment ──
 
 # Activate jetson-speech venv (provides the `jetson-speech` CLI command)
-VENV_PATH="${BASKD_DIR}/../jetson-speech/.venv"
-if [ ! -d "$VENV_PATH" ]; then
-    # Try home directory
-    VENV_PATH="$HOME/jetson-speech/.venv"
-fi
+VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-speech/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else
@@ -143,8 +138,9 @@ if [ "$START_HUB" = true ]; then
         echo "OK (already running)"
     else
         echo "starting..."
-        if [ -d "$BASKD_DIR/aether" ]; then
-            (cd "$BASKD_DIR/aether" && nohup go run ./cmd/hub > /tmp/aether-hub.log 2>&1 &)
+        AETHER_DIR="${AETHER_DIR:-$HOME/aether}"
+        if [ -d "$AETHER_DIR" ]; then
+            (cd "$AETHER_DIR" && nohup go run ./cmd/hub > /tmp/aether-hub.log 2>&1 &)
             sleep 2
             if pgrep -f "aether.*hub" > /dev/null 2>&1; then
                 echo "  Aether Hub started (log: /tmp/aether-hub.log)"
@@ -154,7 +150,7 @@ if [ "$START_HUB" = true ]; then
                 ENABLE_PHONE=false
             fi
         else
-            echo "  WARNING: $BASKD_DIR/aether not found. Skipping Aether Hub."
+            echo "  WARNING: $AETHER_DIR not found. Skipping Aether Hub."
             ENABLE_PHONE=false
         fi
     fi
@@ -217,7 +213,7 @@ echo '  "Check the local camera" (uses Jetson USB camera)'
 echo '  "Check the phone camera" (uses phone via Aether)'
 echo '  "Watch the local camera for a person"'
 echo '  "What time is it?"'
-echo '  "Remember my name is Amar"'
+echo '  "Remember my name is Alex"'
 echo '  "Search the web for NVIDIA GTC 2026"'
 echo '  "Go to sleep"'
 echo '  "Wake up!"'

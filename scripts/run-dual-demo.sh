@@ -21,7 +21,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BASKD_DIR="$(dirname "$(dirname "$PROJECT_DIR")")"
 
 REACHY_HOST_2="${REACHY_HOST_2:-}"
 
@@ -29,15 +28,12 @@ if [ -z "$REACHY_HOST_2" ]; then
     echo "ERROR: Set REACHY_HOST_2=<ip> for the follower robot daemon."
     echo ""
     echo "Usage:"
-    echo "  REACHY_HOST=192.168.0.29 REACHY_HOST_2=192.168.0.30 $0"
+    echo "  REACHY_HOST=<primary-ip> REACHY_HOST_2=<follower-ip> $0"
     exit 1
 fi
 
 # Activate venv
-VENV_PATH="${BASKD_DIR}/../jetson-speech/.venv"
-if [ ! -d "$VENV_PATH" ]; then
-    VENV_PATH="$HOME/jetson-speech/.venv"
-fi
+VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-speech/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else

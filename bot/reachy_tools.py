@@ -71,75 +71,8 @@ def _get_reachy():
         if _reachy is not None:
             return _reachy
         try:
-            from reachy_mini import ReachyMini
-
-            # Fix SDK 1.3.0 bug: _handle_task_progress asserts on unknown UUIDs
-            # from the daemon's internal control loop, which blocks goto_target()
-            # forever. Patch it to silently ignore unknown UUIDs.
-            from reachy_mini.io import zenoh_client as _zc
-            _orig_handle_task = _zc.ZenohClient._handle_task_progress
-
-            def _patched_handle_task_progress(self, sample):
-                import zenoh as _z
-                if sample.payload:
-                    from reachy_mini.io.zenoh_client import TaskProgress
-                    progress = TaskProgress.model_validate_json(sample.payload.to_string())
-                    if progress.uuid not in self.tasks:
-                        return  # Silently ignore unknown UUIDs (daemon internal tasks)
-                    if progress.error:
-                        self.tasks[progress.uuid].error = progress.error
-                    if progress.finished:
-                        self.tasks[progress.uuid].event.set()
-
-            _zc.ZenohClient._handle_task_progress = _patched_handle_task_progress
-
-            host = os.environ.get("REACHY_HOST")
-            if host:
-                # Remote daemon: patch ZenohClient to use client mode with direct endpoint
-                # (peer/multicast discovery doesn't cross network segments)
-                import json
-                import zenoh
-                _orig_init = _zc.ZenohClient.__init__
-
-                def _patched_init(self, prefix, localhost_only=True):
-                    endpoint = f"tcp/{host}:7447"
-                    c = zenoh.Config.from_json5(json.dumps({
-                        "mode": "client",
-                        "connect": {"endpoints": [endpoint]},
-                    }))
-                    self.prefix = prefix
-                    self.joint_position_received = _zc.threading.Event()
-                    self.head_pose_received = _zc.threading.Event()
-                    self.status_received = _zc.threading.Event()
-                    self.imu_data_received = _zc.threading.Event()
-                    self.session = zenoh.open(c)
-                    self.cmd_pub = self.session.declare_publisher(f"{prefix}/command")
-                    self.joint_sub = self.session.declare_subscriber(f"{prefix}/joint_positions", self._handle_joint_positions)
-                    self.pose_sub = self.session.declare_subscriber(f"{prefix}/head_pose", self._handle_head_pose)
-                    self.recording_sub = self.session.declare_subscriber(f"{prefix}/recorded_data", self._handle_recorded_data)
-                    self.status_sub = self.session.declare_subscriber(f"{prefix}/daemon_status", self._handle_status)
-                    self.imu_sub = self.session.declare_subscriber(f"{prefix}/imu_data", self._handle_imu_data)
-                    self._last_head_joint_positions = None
-                    self._last_antennas_joint_positions = None
-                    self._last_head_pose = None
-                    self._recorded_data = None
-                    self._recorded_data_ready = _zc.threading.Event()
-                    self._is_alive = False
-                    self._last_status = {}
-                    self._last_imu_data = None
-                    self.tasks = {}
-                    self.task_request_pub = self.session.declare_publisher(f"{prefix}/task")
-                    self.task_progress_sub = self.session.declare_subscriber(f"{prefix}/task_progress", self._handle_task_progress)
-
-                _zc.ZenohClient.__init__ = _patched_init
-
-                _reachy = ReachyMini(connection_mode="network", timeout=10.0, media_backend="no_media")
-
-                # Restore original init
-                _zc.ZenohClient.__init__ = _orig_init
-            else:
-                _reachy = ReachyMini(timeout=5.0, media_backend="no_media")
-
+            from reachy_connect import connect_reachy
+            _reachy = connect_reachy()
             return _reachy
         except Exception as e:
             raise ConnectionError(f"Cannot connect to Reachy Mini: {e}")
@@ -503,7 +436,8 @@ def register_tools(registry, context=None):
             b64 = base64.b64encode(buf.getvalue()).decode()
 
             response = _llm_ref.generate(question, images=[b64])
-            return response or "I couldn't describe what I see."
+            text = getattr(response, "text", response) or ""
+            return text or "I couldn't describe what I see."
         except Exception as e:
             return f"Camera error: {e}"
 

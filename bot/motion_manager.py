@@ -324,6 +324,7 @@ class MotionManager:
 
         # SDK import cache
         self._create_head_pose = None
+        self._consecutive_errors = 0
 
     def start(self):
         if self._running:
@@ -436,7 +437,7 @@ class MotionManager:
             reachy.goto_target(head=head_pose, antennas=antennas, duration=0.04)
             self._consecutive_errors = 0
         except Exception:
-            self._consecutive_errors = getattr(self, '_consecutive_errors', 0) + 1
+            self._consecutive_errors += 1
             if self._consecutive_errors == 10:
                 import sys
                 print("MotionManager: 10 consecutive SDK errors — robot may be disconnected", file=sys.stderr)

@@ -35,7 +35,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BASKD_DIR="$(dirname "$(dirname "$PROJECT_DIR")")"
 
 # ── Parse flags ──
 START_DAEMON=true
@@ -55,10 +54,7 @@ done
 # ── Environment ──
 
 # Activate jetson-speech venv
-VENV_PATH="${BASKD_DIR}/../jetson-speech/.venv"
-if [ ! -d "$VENV_PATH" ]; then
-    VENV_PATH="$HOME/jetson-speech/.venv"
-fi
+VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-speech/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else
@@ -109,8 +105,9 @@ if [ "$START_HUB" = true ]; then
         echo "OK (running)"
     else
         echo -n "starting... "
-        if [ -d "$BASKD_DIR/aether" ]; then
-            (cd "$BASKD_DIR/aether" && nohup go run ./cmd/hub > /tmp/aether-hub.log 2>&1 &)
+        AETHER_DIR="${AETHER_DIR:-$HOME/aether}"
+        if [ -d "$AETHER_DIR" ]; then
+            (cd "$AETHER_DIR" && nohup go run ./cmd/hub > /tmp/aether-hub.log 2>&1 &)
             sleep 2
             if pgrep -f "aether.*hub" > /dev/null 2>&1; then
                 echo "OK"
@@ -119,7 +116,7 @@ if [ "$START_HUB" = true ]; then
                 ENABLE_PHONE=false
             fi
         else
-            echo "SKIP ($BASKD_DIR/aether not found)"
+            echo "SKIP ($AETHER_DIR not found)"
             ENABLE_PHONE=false
         fi
     fi

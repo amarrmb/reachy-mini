@@ -8,8 +8,7 @@ Matches the ACTUAL VoiceAssistant pipeline:
 3. _try_parse_tool_call() extracts and executes
 
 Usage (on Jetson, with vLLM on :8001 and reachy-mini-daemon on laptop):
-    REACHY_HOST=192.168.0.29 PYTHONPATH=~/baskd/demos/reachy-mini/bot \
-        python3 ~/baskd/demos/reachy-mini/tests/test_e2e.py
+    REACHY_HOST=<daemon-ip> PYTHONPATH=./bot python3 tests/test_e2e.py
 """
 
 import json

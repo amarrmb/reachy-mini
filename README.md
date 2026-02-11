@@ -67,7 +67,7 @@ scripts/run-gtc-demo.sh
 ## Project Structure
 
 ```
-demos/reachy-mini/
+reachy-mini/
 ├── README.md                 # This file
 ├── .env.template             # Environment variables template
 ├── .gitignore
@@ -76,6 +76,7 @@ demos/reachy-mini/
 ├── bot/                      # Robot control modules
 │   ├── reachy_tools.py       # 9 tools: look, express, dance, nod, see, ...
 │   ├── motion_manager.py     # 50Hz MotionManager (breathing, sway, listen)
+│   ├── reachy_connect.py     # Shared SDK connection helper (Zenoh patches)
 │   └── follower.py           # Dual-robot follower (mirrors primary's state)
 │
 ├── configs/                  # Configuration profiles

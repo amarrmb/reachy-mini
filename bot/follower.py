@@ -13,10 +13,10 @@ Architecture:
 
 Usage:
     # Terminal 1: Primary (normal GTC demo)
-    REACHY_HOST=192.168.0.29 REACHY_BROADCAST=1 ./run-gtc-demo.sh
+    REACHY_HOST=<primary-ip> REACHY_BROADCAST=1 ./run-gtc-demo.sh
 
     # Terminal 2: Follower (this script)
-    python reachy_follower.py --host 192.168.0.30
+    python follower.py --host <follower-ip>
 
     # Or use the combined launcher:
     ./run-dual-demo.sh
@@ -148,62 +148,8 @@ class ReachyFollower:
         print("Follower stopped.", file=sys.stderr)
 
     def _connect_reachy(self):
-        from reachy_mini import ReachyMini
-        from reachy_mini.io import zenoh_client as _zc
-        import json as _json
-        import zenoh
-
-        # Monkey-patch for remote connection (same as reachy_tools.py)
-        _orig_handle = _zc.ZenohClient._handle_task_progress
-
-        def _patched_handle(self, sample):
-            if sample.payload:
-                from reachy_mini.io.zenoh_client import TaskProgress
-                progress = TaskProgress.model_validate_json(sample.payload.to_string())
-                if progress.uuid not in self.tasks:
-                    return
-                if progress.error:
-                    self.tasks[progress.uuid].error = progress.error
-                if progress.finished:
-                    self.tasks[progress.uuid].event.set()
-
-        _zc.ZenohClient._handle_task_progress = _patched_handle
-
-        _orig_init = _zc.ZenohClient.__init__
-
-        def _patched_init(self_zc, prefix, localhost_only=True):
-            endpoint = f"tcp/{self._host}:7447"
-            c = zenoh.Config.from_json5(_json.dumps({
-                "mode": "client",
-                "connect": {"endpoints": [endpoint]},
-            }))
-            self_zc.prefix = prefix
-            self_zc.joint_position_received = _zc.threading.Event()
-            self_zc.head_pose_received = _zc.threading.Event()
-            self_zc.status_received = _zc.threading.Event()
-            self_zc.imu_data_received = _zc.threading.Event()
-            self_zc.session = zenoh.open(c)
-            self_zc.cmd_pub = self_zc.session.declare_publisher(f"{prefix}/command")
-            self_zc.joint_sub = self_zc.session.declare_subscriber(f"{prefix}/joint_positions", self_zc._handle_joint_positions)
-            self_zc.pose_sub = self_zc.session.declare_subscriber(f"{prefix}/head_pose", self_zc._handle_head_pose)
-            self_zc.recording_sub = self_zc.session.declare_subscriber(f"{prefix}/recorded_data", self_zc._handle_recorded_data)
-            self_zc.status_sub = self_zc.session.declare_subscriber(f"{prefix}/daemon_status", self_zc._handle_status)
-            self_zc.imu_sub = self_zc.session.declare_subscriber(f"{prefix}/imu_data", self_zc._handle_imu_data)
-            self_zc._last_head_joint_positions = None
-            self_zc._last_antennas_joint_positions = None
-            self_zc._last_head_pose = None
-            self_zc._recorded_data = None
-            self_zc._recorded_data_ready = _zc.threading.Event()
-            self_zc._is_alive = False
-            self_zc._last_status = {}
-            self_zc._last_imu_data = None
-            self_zc.tasks = {}
-            self_zc.task_request_pub = self_zc.session.declare_publisher(f"{prefix}/task")
-            self_zc.task_progress_sub = self_zc.session.declare_subscriber(f"{prefix}/task_progress", self_zc._handle_task_progress)
-
-        _zc.ZenohClient.__init__ = _patched_init
-        self._reachy = ReachyMini(connection_mode="network", timeout=10.0, media_backend="no_media")
-        _zc.ZenohClient.__init__ = _orig_init
+        from reachy_connect import connect_reachy
+        self._reachy = connect_reachy(host=self._host)
 
     def _init_motion_manager(self):
         self._mm = MotionManager(lambda: self._reachy)
