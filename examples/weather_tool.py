@@ -5,7 +5,7 @@ This is the "add a tool in 60 seconds" demo for GTC.
 10 lines of actual code. Drop it in, restart, use it.
 
 Usage:
-    jetson-speech assistant --external-tools reachy_tools,example_tool_weather ...
+    jetson-assistant assistant --external-tools reachy_tools,example_tool_weather ...
 
 Or in config.yaml:
     external_tools:

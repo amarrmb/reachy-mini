@@ -4,10 +4,10 @@
 # Prerequisites:
 #   1. pip install reachy-mini[mujoco] Pillow
 #   2. reachy-mini-daemon --sim  (in another terminal)
-#   3. vLLM container running on port 8001 (see jetson-speech CLAUDE.md)
-#   4. pip install -e ".[kokoro,nemotron,assistant,vision]" (in jetson-speech/)
+#   3. vLLM container running on port 8001 (see jetson-assistant CLAUDE.md)
+#   4. pip install -e ".[kokoro,nemotron,assistant,vision]" (in jetson-assistant/)
 #
-# Usage: ./run.sh [extra jetson-speech args...]
+# Usage: ./run.sh [extra jetson-assistant args...]
 
 set -euo pipefail
 
@@ -27,4 +27,4 @@ echo "Config: ${PROJECT_DIR}/configs/default.yaml"
 echo "PYTHONPATH includes: ${PROJECT_DIR}/bot"
 echo ""
 
-exec jetson-speech assistant --config "${PROJECT_DIR}/configs/default.yaml" "$@"
+exec jetson-assistant assistant --config "${PROJECT_DIR}/configs/default.yaml" "$@"

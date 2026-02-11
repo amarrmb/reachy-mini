@@ -2,7 +2,7 @@
 Unit tests for bot.motion_manager — pure tests, no hardware or SDK dependencies.
 
 Run with:
-    cd /home/amar/baskd/reachy-mini && python -m pytest tests/test_motion_manager.py -v
+    python -m pytest tests/test_motion_manager.py -v
 """
 
 import math

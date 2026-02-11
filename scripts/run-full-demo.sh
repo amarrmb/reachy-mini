@@ -6,7 +6,7 @@
 #   1. Checks prerequisites (vLLM, Aether Hub, reachy-mini-daemon)
 #   2. Starts reachy-mini-daemon if not running (MuJoCo sim or real robot)
 #   3. Starts Aether Hub if not running (for phone camera + alerts)
-#   4. Launches jetson-speech assistant with full config
+#   4. Launches jetson-assistant assistant with full config
 #
 # ┌──────────────────────────────────────────────────────────────────┐
 # │                        ARCHITECTURE                              │
@@ -14,7 +14,7 @@
 # │  JETSON THOR (this machine)                                      │
 # │  ├── vLLM container (:8001) — Qwen2.5-VL-7B NVFP4              │
 # │  ├── Aether Hub (:8000) — phone camera relay + alerts           │
-# │  └── jetson-speech assistant                                     │
+# │  └── jetson-assistant assistant                                     │
 # │      ├── Nemotron STT (in-process, ~24ms)                       │
 # │      ├── Kokoro TTS (in-process, <300ms, af_heart voice)        │
 # │      ├── vLLM VLM backend (vision + text)                       │
@@ -49,7 +49,7 @@
 #
 # PREREQUISITES:
 #   1. vLLM container running on :8001 (see below)
-#   2. pip install -e ".[kokoro,nemotron,assistant,vision]" (in jetson-speech/)
+#   2. pip install -e ".[kokoro,nemotron,assistant,vision]" (in jetson-assistant/)
 #   3. pip install reachy-mini[mujoco] Pillow (for sim mode)
 #   4. apt-get install espeak-ng (required by Kokoro TTS)
 #
@@ -85,13 +85,13 @@ done
 
 # ── Environment ──
 
-# Activate jetson-speech venv (provides the `jetson-speech` CLI command)
-VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-speech/.venv}"
+# Activate jetson-assistant venv (provides the `jetson-assistant` CLI command)
+VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-assistant/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else
-    echo "ERROR: jetson-speech venv not found at ~/jetson-speech/.venv"
-    echo "Install: cd ~/jetson-speech && python3 -m venv .venv && source .venv/bin/activate && pip install -e '.[kokoro,nemotron,assistant,vision]'"
+    echo "ERROR: jetson-assistant venv not found at ~/jetson-assistant/.venv"
+    echo "Install: cd ~/jetson-assistant && python3 -m venv .venv && source .venv/bin/activate && pip install -e '.[kokoro,nemotron,assistant,vision]'"
     exit 1
 fi
 
@@ -222,7 +222,7 @@ echo "Press Ctrl+C to stop."
 echo ""
 
 # ── Launch assistant ──
-exec jetson-speech assistant \
+exec jetson-assistant assistant \
     --config "${PROJECT_DIR}/configs/full-demo.yaml" \
     ${CLI_OVERRIDES[@]+"${CLI_OVERRIDES[@]}"} \
     ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}

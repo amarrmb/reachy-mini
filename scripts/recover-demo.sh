@@ -39,9 +39,9 @@ echo ""
 echo "  [1/4] Killing stale processes..."
 
 if [ "$RESTART_OTHER" = true ]; then
-    # Kill assistant (jetson-speech)
-    if pkill -f "jetson-speech assistant" 2>/dev/null; then
-        echo "    Killed: jetson-speech assistant"
+    # Kill assistant (jetson-assistant)
+    if pkill -f "jetson-assistant assistant" 2>/dev/null; then
+        echo "    Killed: jetson-assistant assistant"
     fi
 
     # Kill reachy-mini-daemon

@@ -16,8 +16,8 @@ import re
 import sys
 import time
 
-from jetson_speech.assistant.tools import ToolRegistry
-from jetson_speech.assistant.llm import create_llm, ToolCallResult
+from jetson_assistant.assistant.tools import ToolRegistry
+from jetson_assistant.assistant.llm import create_llm, ToolCallResult
 
 # ── Build the system prompt exactly as VoiceAssistant does ──
 

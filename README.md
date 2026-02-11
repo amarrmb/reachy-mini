@@ -23,7 +23,7 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 | Component | Install |
 |-----------|---------|
 | vLLM container | See [Start vLLM](#start-vllm) below |
-| jetson-speech | `cd ~/jetson-speech && pip install -e ".[kokoro,nemotron,assistant,vision]"` |
+| jetson-assistant | `cd ~/jetson-assistant && pip install -e ".[kokoro,nemotron,assistant,vision]"` |
 | reachy-mini SDK | `pip install reachy-mini[mujoco] Pillow` |
 | espeak-ng | `apt-get install espeak-ng` |
 
@@ -104,7 +104,7 @@ reachy-mini/
 
 ## How It Works
 
-This demo uses jetson-speech's **external tool plugin system**. The `bot/reachy_tools.py` module registers tools with the assistant's tool registry. The LLM decides when to call them based on conversation context.
+This demo uses jetson-assistant's **external tool plugin system**. The `bot/reachy_tools.py` module registers tools with the assistant's tool registry. The LLM decides when to call them based on conversation context.
 
 ### Tool Plugin Contract
 
@@ -187,7 +187,7 @@ Configs live in `configs/`. Key settings:
 | `ModuleNotFoundError: reachy_tools` | Use launcher scripts, or set `PYTHONPATH=bot` |
 | vLLM not responding | `curl http://localhost:8001/v1/models` — takes ~5min to start |
 | No audio output | Run from a real terminal (not SSH nohup). Check `python -m sounddevice` |
-| Camera in use | Kill `jetson-speech` if it holds the camera: `pkill -f jetson-speech` |
+| Camera in use | Kill `jetson-assistant` if it holds the camera: `pkill -f jetson-assistant` |
 | Demo crashed mid-run | `scripts/recover-demo.sh` kills + restarts everything |
 | vLLM OOM | `scripts/recover-demo.sh --vllm-only` clears GPU memory and restarts |
 

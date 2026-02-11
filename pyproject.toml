@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "reachy-mini-voice"
@@ -9,16 +9,21 @@ description = "Voice + vision AI brain for Reachy Mini robots on NVIDIA Jetson"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
+authors = [{name = "Baskd", email = "hello@baskd.io"}]
+keywords = ["reachy", "robot", "voice", "assistant", "jetson"]
 dependencies = [
     "reachy-mini[mujoco]",
     "Pillow",
 ]
 
 [project.urls]
-Homepage = "https://github.com/baskd/reachy-mini"
-Repository = "https://github.com/baskd/reachy-mini"
+Homepage = "https://github.com/amarrmb/reachy-mini"
+Repository = "https://github.com/amarrmb/reachy-mini"
 
 [project.optional-dependencies]
+voice = [
+    "jetson-assistant[kokoro,nemotron,assistant,vision]",
+]
 dev = [
     "pytest",
     "ruff",

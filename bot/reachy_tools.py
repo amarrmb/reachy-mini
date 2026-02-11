@@ -1,5 +1,5 @@
 """
-External tool plugin for Reachy Mini robot control via jetson-speech.
+External tool plugin for Reachy Mini robot control via jetson-assistant.
 
 Provides voice-controlled robot actions: look, express emotions, dance,
 see through camera, power on/off, nod/shake, set antennas, look at point.
@@ -11,7 +11,7 @@ All motion goes through MotionManager (50Hz background thread) for:
 - Reactive listening poses (during LISTENING/PROCESSING)
 
 Usage:
-    jetson-speech assistant --external-tools reachy_tools ...
+    jetson-assistant assistant --external-tools reachy_tools ...
 
 Or in config.yaml:
     external_tools:
@@ -50,7 +50,7 @@ from motion_manager import (
 _reachy = None
 _reachy_lock = threading.Lock()
 _llm_ref = None  # Stored reference to LLM backend for reachy_see
-_camera_pool_ref = None  # CameraPool from jetson-speech context
+_camera_pool_ref = None  # CameraPool from jetson-assistant context
 _say_ref = None  # say() callback from assistant for proactive speech
 _motion_manager: Optional[MotionManager] = None
 _booth_greeter = None  # BoothGreeter instance (when BOOTH_MODE=1)
@@ -271,7 +271,7 @@ def _ensure_motion_manager():
 
 
 def on_state_change(old_state: str, new_state: str):
-    """Called by jetson-speech core.py on every assistant state transition.
+    """Called by jetson-assistant core.py on every assistant state transition.
 
     Drives reactive listening poses and audio-reactive sway activation.
     """
@@ -297,7 +297,7 @@ def on_state_change(old_state: str, new_state: str):
 
 
 def on_audio_chunk(audio_chunk, sample_rate: int):
-    """Called by jetson-speech AudioOutput during TTS playback.
+    """Called by jetson-assistant AudioOutput during TTS playback.
 
     Feeds loudness to the audio-reactive sway oscillator.
     """

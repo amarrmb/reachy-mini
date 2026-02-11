@@ -1,6 +1,6 @@
-# Reachy Mini + jetson-speech voice assistant config
+# Reachy Mini + jetson-assistant voice assistant config
 #
-# Usage: jetson-speech assistant --config config.yaml
+# Usage: jetson-assistant assistant --config config.yaml
 # Requires: vLLM container running on port 8001
 
 # External tools plugin

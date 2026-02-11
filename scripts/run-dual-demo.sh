@@ -15,7 +15,7 @@
 # PREREQUISITES:
 #   1. Two reachy-mini-daemon instances running (different machines or different prefixes)
 #   2. vLLM container running on :8001
-#   3. pip install reachy-mini[mujoco] (in jetson-speech venv)
+#   3. pip install reachy-mini[mujoco] (in jetson-assistant venv)
 
 set -euo pipefail
 
@@ -33,11 +33,11 @@ if [ -z "$REACHY_HOST_2" ]; then
 fi
 
 # Activate venv
-VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-speech/.venv}"
+VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-assistant/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else
-    echo "ERROR: jetson-speech venv not found"
+    echo "ERROR: jetson-assistant venv not found"
     exit 1
 fi
 

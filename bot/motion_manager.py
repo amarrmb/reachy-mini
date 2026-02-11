@@ -3,7 +3,7 @@ MotionManager — 50Hz background thread that composes primary + secondary motio
 
 Brev's Reachy demo uses a 100Hz MovementManager with audio-reactive sway,
 idle breathing, and reactive listening layered on top of explicit commands.
-This is our equivalent, designed for the jetson-speech external tool plugin.
+This is our equivalent, designed for the jetson-assistant external tool plugin.
 
 Architecture:
     Primary motion: explicit commands (look, dance, express) — exclusive, one at a time
