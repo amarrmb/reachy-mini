@@ -9,7 +9,7 @@ description = "Voice + vision AI brain for Reachy Mini robots on NVIDIA Jetson"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
-authors = [{name = "Baskd", email = "hello@baskd.io"}]
+authors = [{name = "DeviceNexus.ai", email = "hello@devicenexus.ai"}]
 keywords = ["reachy", "robot", "voice", "assistant", "jetson"]
 dependencies = [
     "reachy-mini[mujoco]",

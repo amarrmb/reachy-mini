@@ -1,4 +1,4 @@
-# Baskd × Reachy Mini — Built on NVIDIA
+# DeviceNexus.ai × Reachy Mini — Built on NVIDIA
 
 > **For GTC booth conversations. One slide, one message.**
 
@@ -20,7 +20,7 @@
 
 ## How We're Different from the CES Demo
 
-|  | NVIDIA/Brev (CES 2026) | Baskd (This Demo) |
+|  | NVIDIA/Brev (CES 2026) | DeviceNexus.ai (This Demo) |
 |--|------------------------|-------------------|
 | **Speech** | ElevenLabs cloud STT + TTS | Nemotron STT + Kokoro TTS — **100% local** |
 | **Languages** | English only | **9 languages**, near-human quality |
@@ -38,7 +38,7 @@
 We don't compete with NVIDIA — we build on it.
 
 - **NVIDIA provides**: Jetson hardware, Nemotron models, vLLM serving, CUDA runtime
-- **Baskd provides**: The operational layer — voice assistant, robot control, tool system, fleet management
+- **DeviceNexus.ai provides**: The operational layer — voice assistant, robot control, tool system, fleet management
 
 **Same relationship as Android and Google Play Services.**
 The edge runtime is open. The cloud services (training, fleet management, improvement loop) are commercial.
@@ -66,6 +66,6 @@ Network: NOT REQUIRED
 
 ## Contact
 
-**Baskd** — Physical AI Infrastructure
-- Web: baskd.io
+**DeviceNexus.ai** — Physical AI Infrastructure
+- Web: devicenexus.ai
 - Demo: Ask Reachy anything. Or tell it to dance.

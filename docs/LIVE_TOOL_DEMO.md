@@ -4,9 +4,9 @@
 
 ## Setup (Before Demo)
 
-1. Have `example_tool_weather.py` ready but NOT loaded
+1. Have `examples/weather_tool.py` ready but NOT loaded
 2. Have the demo running normally with just `reachy_tools`
-3. Have a text editor open with `example_tool_weather.py` visible
+3. Have a text editor open with `examples/weather_tool.py` visible
 
 ## Demo Script (60 seconds)
 
@@ -19,7 +19,7 @@
 
 ### Step 2: Write the Tool (30s)
 
-Show the screen. Open `example_tool_weather.py`:
+Show the screen. Open `examples/weather_tool.py`:
 
 ```python
 def register_tools(registry, context=None):
@@ -39,15 +39,15 @@ def register_tools(registry, context=None):
 
 ### Step 3: Add It (10s)
 
-Edit `config-gtc-demo.yaml`:
+Edit `configs/gtc-demo.yaml`:
 
 ```yaml
 external_tools:
   - reachy_tools
-  - example_tool_weather    # ← add this line
+  - weather_tool            # ← add this line
 ```
 
-Restart the assistant (Ctrl+C → re-run `./run-gtc-demo.sh`).
+Restart the assistant (Ctrl+C → re-run `scripts/run-gtc-demo.sh`).
 
 ### Step 4: Use It (10s)
 
@@ -62,7 +62,7 @@ Restart the assistant (Ctrl+C → re-run `./run-gtc-demo.sh`).
 
 ```bash
 # Ctrl+C the running demo, then:
-./run-gtc-demo.sh
+scripts/run-gtc-demo.sh
 ```
 
 The script auto-detects vLLM and Reachy daemon — no need to restart them.

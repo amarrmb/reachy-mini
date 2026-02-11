@@ -33,7 +33,7 @@ if [ -z "$REACHY_HOST_2" ]; then
 fi
 
 # Activate venv
-VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-assistant/.venv}"
+VENV_PATH="${JETSON_ASSISTANT_VENV:-$HOME/jetson-assistant/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else

@@ -54,12 +54,13 @@ done
 # ── Environment ──
 
 # Activate jetson-assistant venv
-VENV_PATH="${JETSON_SPEECH_VENV:-$HOME/jetson-assistant/.venv}"
+VENV_PATH="${JETSON_ASSISTANT_VENV:-$HOME/jetson-assistant/.venv}"
 if [ -d "$VENV_PATH" ]; then
     source "${VENV_PATH}/bin/activate"
 else
-    echo "ERROR: jetson-assistant venv not found at ~/jetson-assistant/.venv"
+    echo "ERROR: jetson-assistant venv not found at $VENV_PATH"
     echo "Install: cd ~/jetson-assistant && python3 -m venv .venv && source .venv/bin/activate && pip install -e '.[kokoro,nemotron,assistant,vision]'"
+    echo "Or set JETSON_ASSISTANT_VENV to the path of your existing venv."
     exit 1
 fi
 
@@ -73,7 +74,7 @@ fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║           BASKD × REACHY MINI — GTC 2026 DEMO              ║"
+echo "║       DEVICENEXUS.AI × REACHY MINI — GTC 2026 DEMO          ║"
 echo "║       \"Same Robot. Better Brain. Zero Cloud.\"               ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
@@ -165,7 +166,7 @@ echo "┌───────────────────────�
 echo "│  Pipeline: Nemotron STT → vLLM VLM → Kokoro TTS             │"
 echo "│  Voice:    af_heart (Kokoro, 24kHz, near-human)              │"
 echo "│  Motion:   MotionManager 50Hz (breathing + sway + listening) │"
-echo "│  Tools:    built-in (20+) + reachy_tools (8 robot actions)   │"
+echo "│  Tools:    built-in (20+) + reachy_tools (9 robot actions)   │"
 echo "│  Vision:   USB camera + phone (Aether WebRTC)                │"
 echo "│  Preview:  http://${IP_ADDR}:9090/                           │"
 echo "│  Reachy:   ${REACHY_HOST_VAL:-localhost} (Zenoh)             │"

@@ -53,7 +53,7 @@ watch_vote_window: 3
 
 # ── System prompt — GTC Demo Personality ──
 system_prompt: |
-  You are Reachy, a friendly and expressive robot assistant built by Baskd.
+  You are Reachy, a friendly and expressive robot assistant built by DeviceNexus.ai.
   You're running 100% on-device on an NVIDIA Jetson Thor — no cloud needed.
 
   IMPORTANT: Users talk to you by voice. Speech recognition often garbles

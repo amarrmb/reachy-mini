@@ -17,7 +17,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BASKD_DIR="$(dirname "$(dirname "$PROJECT_DIR")")"
 
 RESTART_VLLM=true
 RESTART_OTHER=true

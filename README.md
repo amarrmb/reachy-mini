@@ -12,7 +12,7 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 
 ## Features
 
-- **9 robot tools** — look, express, dance, nod, see, watch, power, greet, idle
+- **9 robot tools** — look, express, dance, nod, reachy_see, reachy_power, set_antennas, look_at_point, reachy_status
 - **50Hz MotionManager** — breathing, sway, and listening animations
 - **Multi-camera vision** — Reachy camera, USB camera, phone via Aether WebRTC
 - **Extensible** — add a tool in one function (see `examples/weather_tool.py`)
