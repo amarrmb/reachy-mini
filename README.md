@@ -16,9 +16,19 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 
 9 robot tools, 50Hz MotionManager, multi-camera vision. Sub-second end-to-end.
 
-## Try It (Jetson Thor)
+## Try It
+
+### What you need
+
+| Machine | Runs | Why |
+|---------|------|-----|
+| **Jetson Thor** | Voice AI (STT + LLM + TTS) | GPU required for inference |
+| **Your laptop** | Reachy Mini daemon (sim or real) | Needs a display for MuJoCo UI |
+
+### Step 1: Start the voice AI on Jetson
 
 ```bash
+# SSH into your Jetson Thor
 sudo sysctl -w vm.drop_caches=3
 
 docker compose up -d
@@ -26,13 +36,41 @@ docker compose up -d
 docker compose logs -f reachy
 ```
 
-Plug in a mic and speaker. Say "Look to the left", "Show me you're happy!",
-or "Do a dance".
+### Step 2: Start the robot (pick one)
+
+**Option A — MuJoCo simulation (no robot needed):**
+
+On your laptop:
+```bash
+pip install reachy-mini[mujoco]
+reachy-mini-daemon --sim
+```
+
+A MuJoCo window opens showing the simulated Reachy Mini.
+
+**Option B — Real Reachy Mini:**
+
+The daemon runs on the robot itself. Just power it on — it auto-starts.
+
+### Step 3: Connect them
+
+Set `REACHY_HOST` on the Jetson to point at your laptop/robot IP:
+
+```bash
+# Stop and restart with the host set
+docker compose down
+REACHY_HOST=<laptop-ip> docker compose up -d
+```
+
+Or for localhost (if daemon runs on the same Jetson):
+```bash
+docker compose up -d    # auto-discovers on localhost
+```
+
+Plug in a mic and speaker on the Jetson. Say "Look to the left",
+"Show me you're happy!", or "Do a dance".
 
 To stop: `docker compose down`
-
-> **No Reachy Mini?** The demo runs in MuJoCo simulation by default.
-> Connect a real robot by setting `REACHY_HOST=<ip>` before `docker compose up`.
 
 ## Like It? Make It Yours
 
@@ -147,7 +185,7 @@ reachy-mini/
 
 | Issue | Fix |
 |-------|-----|
-| `Cannot connect to Reachy Mini` | Make sure `reachy-mini-daemon --sim` is running |
+| `Cannot connect to Reachy Mini` | Make sure `reachy-mini-daemon --sim` is running on your laptop or robot |
 | `ModuleNotFoundError: reachy_tools` | Use launcher scripts, or set `PYTHONPATH=bot` |
 | vLLM not responding | `curl http://localhost:8001/v1/models` — takes ~5min to start |
 | No audio output | Check `python -m sounddevice`. Run from a real terminal. |

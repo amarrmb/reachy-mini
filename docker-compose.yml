@@ -1,8 +1,15 @@
 # ── Reachy Mini Voice Assistant — Jetson Thor ────────────────────────────
 #
-# One command to try it:
+# Runs the voice AI on Jetson. Connect to a Reachy Mini daemon running
+# elsewhere — either the real robot or MuJoCo sim on your laptop.
+#
+# On Jetson:
 #   docker compose up -d
 #   docker compose logs -f reachy    # wait ~5min for vLLM to load
+#
+# On your laptop (simulation):
+#   pip install reachy-mini[mujoco]
+#   reachy-mini-daemon --sim
 #
 # Tip: Run "sudo sysctl -w vm.drop_caches=3" before starting
 #       to reclaim GPU memory from previous runs.
@@ -25,20 +32,6 @@ volumes:
       device: ${HF_CACHE_DIR:-${HOME}/.cache/huggingface}
 
 services:
-  # ── Reachy Mini simulator (MuJoCo, headless) ──────────────────────────
-  daemon:
-    <<: *common
-    image: ghcr.io/amarrmb/reachy-mini:thor
-    container_name: reachy-daemon
-    entrypoint: ["reachy-mini-daemon"]
-    command: ["--sim", "--headless", "--no-localhost-only", "--fastapi-port", "8010"]
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8010/api/daemon/status"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
   # ── VLM: vLLM Qwen2.5-VL-7B NVFP4 on Thor ──────────────────────────
   vllm:
     <<: *common
@@ -73,8 +66,7 @@ services:
     environment:
       - TORCH_COMPILE_DISABLE=1
       - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
+      - REACHY_HOST=${REACHY_HOST:-}    # Set to laptop/robot IP for remote daemon
     depends_on:
       vllm:
-        condition: service_healthy
-      daemon:
         condition: service_healthy
