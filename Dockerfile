@@ -9,10 +9,15 @@
 # Run with docker compose:
 #   docker compose up -d       # starts vLLM + reachy assistant
 
-FROM ghcr.io/amarrmb/jetson-assistant:thor
+ARG BASE_IMAGE=ghcr.io/amarrmb/jetson-assistant:thor
+FROM ${BASE_IMAGE}
 
 WORKDIR /app/reachy-mini
 COPY . .
+
+# Upgrade pip first (reachy-mini requires pip>=25, debian ships 24.0
+# which can't be uninstalled cleanly, so use --ignore-installed)
+RUN pip install --no-cache-dir --break-system-packages --ignore-installed pip>=25
 
 # Reachy Mini SDK (includes MuJoCo for sim mode)
 RUN pip install --no-cache-dir --break-system-packages \
