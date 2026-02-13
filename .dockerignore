@@ -10,7 +10,7 @@ examples/
 *.jpg
 *.mp4
 *.gif
-*.md
+CLAUDE.md
 Dockerfile
 docker-compose.yml
 .gitignore
