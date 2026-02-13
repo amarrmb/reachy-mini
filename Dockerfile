@@ -20,8 +20,9 @@ COPY . .
 RUN pip install --no-cache-dir --break-system-packages --ignore-installed pip>=25
 
 # Reachy Mini SDK (includes MuJoCo for sim mode)
+# Pin huggingface-hub<1.0 — reachy-mini pulls latest but transformers 4.x needs <1.0
 RUN pip install --no-cache-dir --break-system-packages \
-    reachy-mini[mujoco] Pillow
+    "reachy-mini[mujoco]" Pillow "huggingface-hub<1.0"
 
 # bot/ on PYTHONPATH so reachy_tools is importable
 ENV PYTHONPATH="/app/reachy-mini/bot:${PYTHONPATH}"
