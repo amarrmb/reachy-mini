@@ -25,6 +25,20 @@ volumes:
       device: ${HF_CACHE_DIR:-${HOME}/.cache/huggingface}
 
 services:
+  # ── Reachy Mini simulator (MuJoCo, headless) ──────────────────────────
+  daemon:
+    <<: *common
+    image: ghcr.io/amarrmb/reachy-mini:thor
+    container_name: reachy-daemon
+    entrypoint: ["reachy-mini-daemon"]
+    command: ["--sim", "--headless", "--no-localhost-only", "--fastapi-port", "8010"]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8010/api/daemon/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   # ── VLM: vLLM Qwen2.5-VL-7B NVFP4 on Thor ──────────────────────────
   vllm:
     <<: *common
@@ -61,4 +75,6 @@ services:
       - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
     depends_on:
       vllm:
+        condition: service_healthy
+      daemon:
         condition: service_healthy
