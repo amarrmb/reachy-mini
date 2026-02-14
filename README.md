@@ -140,11 +140,11 @@ See `examples/weather_tool.py` for a complete example.
 
 | Issue | Fix |
 |-------|-----|
-| Can't connect to Reachy | Make sure `reachy-mini-daemon --sim` is running on your laptop |
-| `ModuleNotFoundError: reachy_tools` | Use launcher scripts, or set `PYTHONPATH=bot` |
-| vLLM not responding | `curl http://localhost:8001/v1/models` — takes ~5min to start |
-| No audio | Check `python -m sounddevice` — run from a real terminal |
-| Camera in use | `pkill -f jetson-assistant` if another process holds it |
+| Can't connect to Reachy | Ensure `reachy-mini-daemon --sim` is running and `REACHY_HOST` points to it |
+| vLLM not responding | Takes ~5 min to load. Check: `curl http://localhost:8001/v1/models` |
+| No audio output | Verify `/dev/snd` is accessible: `docker exec reachy-assistant python -m sounddevice` |
+| Camera in use | Another process holds it — `pkill -f jetson-assistant` on the host |
+| Container keeps restarting | Check logs: `docker compose logs reachy` |
 
 ## License
 
