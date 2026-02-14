@@ -113,13 +113,23 @@ reachy-mini-daemon --sim &
 
 ### Build Docker
 
+The pre-built image (`ghcr.io/amarrmb/reachy-mini:thor`) works out of the box. If you want to modify the code and rebuild:
+
 ```bash
 # On Jetson Thor (aarch64 only)
-# Requires jetson-assistant:thor as base image
+
+# Option A: Use the pre-built base image from ghcr.io
 docker build -t reachy-mini:thor .
+
+# Option B: Rebuild the base image too (if you modified jetson-assistant)
+cd ../jetson-assistant
+gh release download v0.1.0 -p 'flash_attn-*.whl' -D wheels/
+docker build -t jetson-assistant:thor .
+cd ../reachy-mini
+docker build --build-arg BASE_IMAGE=jetson-assistant:thor -t reachy-mini:thor .
 ```
 
-This layers on top of `ghcr.io/amarrmb/jetson-assistant:thor`. To adapt for other hardware, adapt that image first.
+reachy-mini layers on top of `ghcr.io/amarrmb/jetson-assistant:thor`. The flash-attn wheel needed for building that base image is available from the [jetson-assistant v0.1.0 release](https://github.com/amarrmb/jetson-assistant/releases/tag/v0.1.0). To adapt for other hardware, adapt the base image first — see [jetson-assistant build docs](https://github.com/amarrmb/jetson-assistant#build-docker).
 
 ### Extend It
 
