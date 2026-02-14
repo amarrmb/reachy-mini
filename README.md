@@ -88,6 +88,7 @@ Environment variables:
 
 | Variable | Description |
 |----------|-------------|
+| `ALSA_CARD` | Audio device name from `aplay -l` (e.g. `USB`, `Jabra`) |
 | `REACHY_HOST` | Remote daemon IP (empty = localhost) |
 | `BOOTH_MODE=1` | Proactive booth greetings |
 | `REACHY_BROADCAST=1` | UDP broadcast for dual-robot mode |
