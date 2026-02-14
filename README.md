@@ -43,6 +43,9 @@ REACHY_HOST=<daemon-ip> docker compose up -d    # pulls ~12GB, vLLM loads model 
 docker compose logs -f reachy                    # watch it come up
 ```
 
+> **Note:** vLLM may restart once on first boot due to CUDA graph memory allocation.
+> This is normal — `restart: unless-stopped` handles it automatically. Wait ~5 minutes.
+
 Plug in a mic and speaker on the Jetson, and start talking:
 
 ```
@@ -142,6 +145,7 @@ See `examples/weather_tool.py` for a complete example.
 |-------|-----|
 | Can't connect to Reachy | Ensure `reachy-mini-daemon --sim` is running and `REACHY_HOST` points to it |
 | vLLM not responding | Takes ~5 min to load. Check: `curl http://localhost:8001/v1/models` |
+| vLLM restarts on first boot | Normal — CUDA graph allocation may OOM once. It auto-recovers. |
 | No audio output | Verify `/dev/snd` is accessible: `docker exec reachy-assistant python -m sounddevice` |
 | Camera in use | Another process holds it — `pkill -f jetson-assistant` on the host |
 | Container keeps restarting | Check logs: `docker compose logs reachy` |
