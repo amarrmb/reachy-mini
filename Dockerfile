@@ -31,5 +31,5 @@ RUN pip install --no-cache-dir --break-system-packages \
 # bot/ on PYTHONPATH so reachy_tools is importable
 ENV PYTHONPATH="/app/reachy-mini/bot:${PYTHONPATH}"
 
-ENTRYPOINT ["jetson-assistant"]
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["assistant", "--config", "/app/reachy-mini/configs/gtc-demo.yaml"]
