@@ -43,7 +43,23 @@ REACHY_HOST=<daemon-ip> docker compose up -d    # pulls ~12GB, vLLM loads model 
 docker compose logs -f reachy                    # watch it come up
 ```
 
-Plug in a mic and speaker on the Jetson. Say "Look to the left", "Show me you're happy!", or "Do a dance".
+Plug in a mic and speaker on the Jetson, and start talking:
+
+```
+"Look to the left"                → head movement (left, right, up, down, center)
+"Show me you're happy!"           → emotional expression (happy, sad, surprised, angry, ...)
+"Do a dance"                      → choreographed dance sequence
+"What do you see?"                → VLM describes what Reachy's camera sees
+"Nod yes" / "Shake your head"     → agree/disagree gesture
+"Go to sleep" / "Wake up"         → power on/off
+"Set your antennas up"            → direct antenna control (-90 to 90 degrees)
+"Look at the object on the table" → precise 3D gaze control
+"Are you connected?"              → robot connection status
+"Set a timer for 30 seconds"      → spoken countdown alert
+"What time is it?"                → built-in clock
+```
+
+All [jetson-assistant](https://github.com/amarrmb/jetson-assistant) tools work too (web search, memory, language switching, multi-camera).
 
 To stop: `docker compose down`
 
@@ -67,17 +83,6 @@ Environment variables:
 | `REACHY_HOST` | Remote daemon IP (empty = localhost) |
 | `BOOTH_MODE=1` | Proactive booth greetings |
 | `REACHY_BROADCAST=1` | UDP broadcast for dual-robot mode |
-
-Voice commands:
-
-```
-"Look to the left"              → head movement
-"Show me you're happy!"         → emotional expression
-"Do a dance"                    → choreographed sequence
-"What do you see?"              → VLM vision
-"Nod yes" / "Shake your head"   → gesture
-"Go to sleep" / "Wake up"       → power control
-```
 
 ### Build Locally
 
