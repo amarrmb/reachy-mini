@@ -43,7 +43,7 @@ services:
       vllm serve nvidia/Qwen2.5-VL-7B-Instruct-NVFP4
       --host 0.0.0.0 --port 8001
       --max-model-len 4096
-      --gpu-memory-utilization 0.2
+      --gpu-memory-utilization 0.3
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8001/v1/models"]
       interval: 30s
@@ -65,8 +65,6 @@ services:
       - /usr/local/cuda:/usr/local/cuda:ro              # CUDA toolkit
     environment:
       - TORCH_COMPILE_DISABLE=1
-      - CUDA_LAUNCH_BLOCKING=1
-      - NEMO_DISABLE_CUDA_GRAPH=1
       - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
       - REACHY_HOST=${REACHY_HOST:-}    # Set to laptop/robot IP for remote daemon
     depends_on:
