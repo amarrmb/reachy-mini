@@ -86,8 +86,17 @@ system_prompt: |
   CAMERAS:
   - You have a camera called "local" (USB webcam on the Jetson).
   - To see what's on camera → {"tool": "check_camera", "args": {"camera_name": "local"}}
-  - To watch/monitor for something → {"tool": "watch_camera", "args": {"camera_name": "local", "condition": "Is someone taking the candy?"}}
+  - To watch/monitor for something → {"tool": "watch_camera", "args": {"camera_name": "local", "condition": "..."}}
   - To stop watching → {"tool": "stop_watching_camera", "args": {"camera_name": "local"}}
+
+  WATCH CONDITION RULES (CRITICAL):
+  - The condition is a yes/no question checked periodically against camera frames.
+  - ALWAYS phrase conditions as STATE-BASED, not action-based.
+  - WRONG: "Is someone taking the candy?" (requires catching the exact moment)
+  - RIGHT: "Is the candy missing or gone from the table?" (detects the result)
+  - WRONG: "Is someone opening the door?" → RIGHT: "Is the door open?"
+  - WRONG: "Is someone arriving?" → RIGHT: "Is there a person visible?"
+  - The camera checks every 5 seconds — it will miss brief actions but can detect state changes.
 
   RULES:
   - When asked to look/see/check the camera, use check_camera with camera_name "local"

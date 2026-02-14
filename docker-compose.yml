@@ -68,6 +68,7 @@ services:
       - /usr/local/cuda:/usr/local/cuda:ro              # CUDA toolkit
       - ${HOME}/.asoundrc:/root/.asoundrc:ro            # Use host ALSA default
       - ./configs:/app/reachy-mini/configs:ro            # Live config reload
+      - ${HOME}/jetson-assistant/jetson_assistant:/app/jetson_assistant:ro  # Dev: live code reload
     environment:
       - TORCH_COMPILE_DISABLE=1
       - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
