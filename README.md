@@ -20,18 +20,7 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 
 Two machines required: Jetson Thor runs voice AI (needs GPU), your laptop runs the robot daemon (needs a display for MuJoCo).
 
-### Step 1: Voice AI on Jetson
-
-```bash
-sudo sysctl -w vm.drop_caches=3
-
-# Download the compose file and start
-curl -fLO https://raw.githubusercontent.com/amarrmb/reachy-mini/main/docker-compose.yml
-docker compose up -d                    # pulls ~12GB, vLLM loads model (~5 min)
-docker compose logs -f reachy           # watch it come up
-```
-
-### Step 2: Robot daemon on your laptop
+### Step 1: Robot daemon on your laptop
 
 **Simulation (no robot needed):**
 ```bash
@@ -41,11 +30,15 @@ reachy-mini-daemon --sim
 
 **Real Reachy Mini:** Just power it on — daemon auto-starts.
 
-### Step 3: Connect them
+### Step 2: Voice AI on Jetson
 
 ```bash
-docker compose down
-REACHY_HOST=<laptop-ip> docker compose up -d
+sudo sysctl -w vm.drop_caches=3
+
+# Download the compose file and start
+curl -fLO https://raw.githubusercontent.com/amarrmb/reachy-mini/main/docker-compose.yml
+REACHY_HOST=<laptop-ip> docker compose up -d    # pulls ~12GB, vLLM loads model (~5 min)
+docker compose logs -f reachy                    # watch it come up
 ```
 
 Plug in a mic and speaker on the Jetson. Say "Look to the left", "Show me you're happy!", or "Do a dance".
