@@ -23,11 +23,10 @@ Two machines required: Jetson Thor runs voice AI (needs GPU), your laptop runs t
 ### Step 1: Voice AI on Jetson
 
 ```bash
-git clone https://github.com/amarrmb/reachy-mini.git
-cd reachy-mini
-
 sudo sysctl -w vm.drop_caches=3
 
+# Download the compose file and start
+curl -fLO https://raw.githubusercontent.com/amarrmb/reachy-mini/main/docker-compose.yml
 docker compose up -d                    # pulls ~12GB, vLLM loads model (~5 min)
 docker compose logs -f reachy           # watch it come up
 ```
