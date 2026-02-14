@@ -64,6 +64,7 @@ services:
     environment:
       - TORCH_COMPILE_DISABLE=1
       - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
+      - ALSA_CARD=${ALSA_CARD:-}    # Audio device name (run "aplay -l" to find yours)
       - REACHY_HOST=${REACHY_HOST:-}    # Set to laptop/robot IP for remote daemon
     depends_on:
       vllm:
