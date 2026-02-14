@@ -59,6 +59,8 @@ services:
     container_name: reachy-assistant
     devices:
       - /dev/snd
+      - /dev/video0
+      - /dev/video1
     volumes:
       - hf-cache:/root/.cache/huggingface
       - /usr/lib/aarch64-linux-gnu:/host-libs:ro        # Jetson NVPL + cuDNN

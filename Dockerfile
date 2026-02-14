@@ -32,4 +32,4 @@ RUN pip install --no-cache-dir --break-system-packages \
 ENV PYTHONPATH="/app/reachy-mini/bot:${PYTHONPATH}"
 
 ENTRYPOINT ["jetson-assistant"]
-CMD ["assistant", "--config", "/app/reachy-mini/configs/default.yaml"]
+CMD ["assistant", "--config", "/app/reachy-mini/configs/gtc-demo.yaml"]
