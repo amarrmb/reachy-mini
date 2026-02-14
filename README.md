@@ -29,6 +29,9 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 
 ```bash
 # SSH into your Jetson Thor
+git clone https://github.com/amarrmb/reachy-mini.git
+cd reachy-mini
+
 sudo sysctl -w vm.drop_caches=3
 
 docker compose up -d
@@ -75,12 +78,15 @@ To stop: `docker compose down`
 ## Like It? Make It Yours
 
 ```bash
+# Clone both repos
+git clone https://github.com/amarrmb/jetson-assistant.git
 git clone https://github.com/amarrmb/reachy-mini.git
-cd reachy-mini
-pip install -e .
 
-# Also need jetson-assistant installed
-cd ~/jetson-assistant && pip install -e ".[kokoro,nemotron,assistant,vision]"
+# Install jetson-assistant first (dependency)
+cd jetson-assistant && pip install -e ".[kokoro,nemotron,assistant,vision]"
+
+# Install reachy-mini
+cd ../reachy-mini && pip install -e .
 
 # Start vLLM + reachy daemon, then run
 docker compose up -d vllm
