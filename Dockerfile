@@ -12,6 +12,10 @@
 ARG BASE_IMAGE=ghcr.io/amarrmb/jetson-assistant:thor
 FROM ${BASE_IMAGE}
 
+LABEL org.opencontainers.image.source="https://github.com/amarrmb/reachy-mini" \
+      org.opencontainers.image.description="Reachy Mini voice assistant on NVIDIA Jetson" \
+      org.opencontainers.image.license="Apache-2.0"
+
 WORKDIR /app/reachy-mini
 COPY . .
 
