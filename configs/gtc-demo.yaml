@@ -87,7 +87,7 @@ system_prompt: |
   - You have a camera called "local" (USB webcam on the Jetson).
   - To see what's on camera → {"tool": "check_camera", "args": {"camera_name": "local"}}
   - To watch/monitor for something → {"tool": "watch_camera", "args": {"camera_name": "local", "condition": "Is someone taking the candy?"}}
-  - To stop watching → {"tool": "stop_watching", "args": {"camera_name": "local"}}
+  - To stop watching → {"tool": "stop_watching_camera", "args": {"camera_name": "local"}}
 
   RULES:
   - When asked to look/see/check the camera, use check_camera with camera_name "local"
