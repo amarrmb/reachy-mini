@@ -155,6 +155,56 @@ external_tools:
 
 See `examples/weather_tool.py` for a complete example.
 
+## PersonaPlex Mode (Full-Duplex Conversation)
+
+Run [PersonaPlex](https://github.com/amarrmb/personaplex-oss) (Moshi 7B speech-to-speech) with audio-reactive Reachy Mini animations. No tool calling — the robot breathes, tilts attentively while listening, and sways its head in sync with PersonaPlex's speech.
+
+```
+Browser ──WebSocket──► PersonaPlex (Jetson GPU)
+                           │ on_audio_frame
+                           ▼
+                       MotionManager (50Hz)
+                           │ Zenoh
+                           ▼
+                       Reachy Mini (sim or real)
+```
+
+### Quick Start
+
+**Terminal 1 — Robot daemon** (laptop for sim, or real robot):
+```bash
+pip install "reachy-mini[mujoco]"
+reachy-mini-daemon --sim --scene minimal
+```
+
+**Terminal 2 — PersonaPlex + Reachy bridge** (Jetson Thor):
+```bash
+python scripts/personaplex_reachy.py \
+    --personaplex-dir ~/personaplex-oss \
+    --port 8998 --fp8 \
+    --reachy-host <laptop-ip>
+```
+
+Open the PersonaPlex Web UI at `https://<jetson-ip>:8998` and start talking. The robot reacts in real time:
+- **Breathing** — subtle idle animation (always on)
+- **Listening pose** — attentive head tilt when you speak
+- **Audio-reactive sway** — head and antenna movement synced to PersonaPlex's speech
+
+### Custom Backend (MuJoCo, Mock, etc.)
+
+The bridge module is importable for custom integrations:
+
+```python
+from personaplex_bridge import setup_motion_manager, create_audio_bridge
+
+# Any object with goto_target(head, antennas, duration) works
+mm = setup_motion_manager(lambda: your_mujoco_reachy)
+callback = create_audio_bridge(mm)
+
+# Pass to PersonaPlex ServerState
+state = ServerState(..., on_audio_frame=callback)
+```
+
 ## Troubleshooting
 
 | Issue | Fix |
