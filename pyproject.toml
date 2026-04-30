@@ -9,25 +9,36 @@ description = "Voice + vision AI brain for Reachy Mini robots on NVIDIA Jetson"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
-authors = [{name = "DeviceNexus.ai", email = "hello@devicenexus.ai"}]
+authors = [{name = "amarrmb"}]
 keywords = ["reachy", "robot", "voice", "assistant", "jetson"]
 dependencies = [
-    "reachy-mini[mujoco]",
+    "reachy-mini>=1.7.0",
     "Pillow",
 ]
 
-[project.urls]
-Homepage = "https://github.com/amarrmb/reachy-mini"
-Repository = "https://github.com/amarrmb/reachy-mini"
-
 [project.optional-dependencies]
+sim = [
+    "reachy-mini[mujoco]>=1.7.0",
+]
 voice = [
     "jetson-assistant[kokoro,nemotron,assistant,vision]",
+]
+pi = [
+    # Lightweight install for the Reachy Pi5 orchestrator: relies on
+    # picamera2 + libcamera from system apt (python3-picamera2).
+    "jetson-assistant",
+    "sounddevice",
+    "numpy",
+    "httpx",
 ]
 dev = [
     "pytest",
     "ruff",
 ]
+
+[project.urls]
+Homepage = "https://github.com/amarrmb/reachy-mini"
+Repository = "https://github.com/amarrmb/reachy-mini"
 
 [tool.setuptools.packages.find]
 where = ["."]

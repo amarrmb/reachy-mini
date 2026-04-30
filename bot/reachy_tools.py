@@ -36,6 +36,9 @@ import threading
 import time
 from typing import Annotated, Optional
 
+import urllib.request
+import urllib.error
+
 from motion_manager import (
     AudioReactiveSway,
     BreathingMotion,
@@ -45,6 +48,63 @@ from motion_manager import (
     ReactiveListeningMotion,
     single_pose,
 )
+from moves_catalog import (
+    DANCES_DATASET,
+    EMOTIONS_DATASET,
+    MovesCatalog,
+    encoded_dataset_path,
+)
+
+
+_DAEMON_BASE = os.environ.get("REACHY_DAEMON_BASE", "http://localhost:8000")
+_moves = MovesCatalog()
+
+
+def _daemon_post(path: str, timeout: float = 2.0) -> Optional[dict]:
+    """Fire-and-forget POST to the daemon's HTTP API.
+
+    The daemon's WebSocket SDK doesn't expose recorded-move playback yet,
+    so we go through HTTP. The orchestrator already has a connection to
+    the daemon for motor / pose commands; this is just a parallel channel
+    for the move library.
+    """
+    url = _DAEMON_BASE + path
+    req = urllib.request.Request(url, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = resp.read()
+            try:
+                import json
+                return json.loads(data) if data else {}
+            except Exception:
+                return {"raw": data.decode(errors="replace")}
+    except urllib.error.HTTPError as e:
+        logger_msg = f"daemon POST {path} -> {e.code} {e.reason}"
+        print(logger_msg, file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"daemon POST {path} -> {e}", file=sys.stderr)
+        return None
+
+
+def _ensure_motors_enabled() -> bool:
+    """Enable motors if currently disabled. Returns True if motors are now enabled.
+
+    Recorded moves only render visibly when motors are in 'enabled' mode.
+    The daemon launches with --no-wake-up-on-start so motors are off until
+    we wake. Calling express/dance before wake_up should still produce
+    motion, so we lift them silently here.
+    """
+    try:
+        with urllib.request.urlopen(_DAEMON_BASE + "/api/motors/status", timeout=1.0) as r:
+            import json
+            data = json.loads(r.read())
+        if data.get("mode") == "enabled":
+            return True
+    except Exception:
+        pass
+    res = _daemon_post("/api/motors/set_mode/enabled")
+    return res is not None
 
 # Lazy connection -- avoid import errors if reachy-mini not installed
 _reachy = None
@@ -61,8 +121,8 @@ _broadcast_addr = None  # ("255.255.255.255", 5555)
 def _get_reachy():
     """Lazy-connect to Reachy Mini SDK. Thread-safe, connects once.
 
-    Set REACHY_HOST=<ip> to connect to a remote daemon (Zenoh client mode).
-    Without REACHY_HOST, uses default auto discovery (localhost).
+    Set REACHY_HOST=<ip> to connect to a remote daemon (WebSocket transport).
+    Without REACHY_HOST, connects to the local daemon on localhost:8000.
     """
     global _reachy
     if _reachy is not None:
@@ -363,36 +423,64 @@ def register_tools(registry, context=None):
         return f"Looking {direction}."
 
     @registry.register(
-        "Express an emotion with Reachy Mini's head and antennas. "
+        "Express an emotion with Reachy Mini's head, antennas, and voice. "
+        "Plays a Pollen-curated emotion animation (~80 to choose from). "
         "Use when the user wants the robot to show feelings."
     )
     def express(
-        emotion: Annotated[str, "Emotion: happy, sad, curious, excited, or surprised"],
+        emotion: Annotated[
+            str,
+            "Emotion word (happy, sad, curious, excited, surprised, "
+            "scared, proud, loving, frustrated, sorry, welcoming, ...). "
+            "A specific recorded-move name (e.g. 'cheerful1') also works.",
+        ],
     ) -> str:
         emotion = emotion.lower().strip()
-        preset = _EMOTION_PRESETS.get(emotion)
-        if preset is None:
-            return f"Unknown emotion '{emotion}'. Try: happy, sad, curious, excited, surprised."
-        _motion_manager.submit_pose(preset, duration=0.6)
-        _broadcast({"type": "emotion", "emotion": emotion})
-        return f"Expressing {emotion}."
+        move = _moves.lookup_emotion(emotion)
+        if move is None:
+            # Fall back to the legacy hand-crafted poses if the catalog
+            # missed (e.g. HF unreachable on first run).
+            preset = _EMOTION_PRESETS.get(emotion)
+            if preset is None:
+                return f"Unknown emotion '{emotion}'."
+            _motion_manager.submit_pose(preset, duration=0.6)
+            _broadcast({"type": "emotion", "emotion": emotion})
+            return f"Expressing {emotion}."
+
+        _ensure_motors_enabled()
+        _daemon_post(encoded_dataset_path(EMOTIONS_DATASET, move))
+        _broadcast({"type": "emotion", "emotion": emotion, "move": move})
+        return f"Expressing {emotion} ({move})."
 
     @registry.register(
-        "Make Reachy Mini do a dance. "
+        "Make Reachy Mini do a dance. Pulls from the Pollen-curated "
+        "dance library (~20 choreographed moves). "
         "Use when the user asks the robot to dance, move, or be playful.",
     )
     def dance(
-        name: Annotated[str, "Dance name: nod_groove, wiggle, look_around, or random"] = "random",
+        name: Annotated[
+            str,
+            "Dance name (groovy_sway_and_roll, polyrhythm_combo, "
+            "head_tilt_roll, simple_nod, etc.) or 'random'.",
+        ] = "random",
     ) -> str:
-        name = name.lower().strip()
-        if name == "random":
-            name = random.choice(list(_DANCES.keys()))
-        seq = _DANCES.get(name)
-        if seq is None:
-            return f"Unknown dance '{name}'. Try: nod_groove, wiggle, look_around, random."
-        _motion_manager.submit_primary(MotionSequence(seq))
-        _broadcast({"type": "dance", "name": name})
-        return f"Dancing: {name}!"
+        move = _moves.lookup_dance(name)
+        if move is None:
+            # Catalog unavailable — fall back to legacy hand-coded sequences.
+            name_l = name.lower().strip()
+            if name_l in ("random", "", "any"):
+                name_l = random.choice(list(_DANCES.keys()))
+            seq = _DANCES.get(name_l)
+            if seq is None:
+                return f"No dance library available and unknown fallback '{name}'."
+            _motion_manager.submit_primary(MotionSequence(seq))
+            _broadcast({"type": "dance", "name": name_l})
+            return f"Dancing: {name_l}!"
+
+        _ensure_motors_enabled()
+        _daemon_post(encoded_dataset_path(DANCES_DATASET, move))
+        _broadcast({"type": "dance", "name": move})
+        return f"Dancing: {move}!"
 
     @registry.register(
         "Capture what Reachy Mini's camera sees and describe it. "
@@ -406,19 +494,25 @@ def register_tools(registry, context=None):
         try:
             frame = None
 
-            # Try Reachy's own camera first (works when daemon is local with media)
-            try:
-                reachy = _get_reachy()
-                frame = reachy.media.get_frame()
-            except Exception:
-                pass
-
-            # Fallback: CameraPool USB cameras on Jetson (works for remote daemon)
-            if frame is None and _camera_pool_ref is not None:
+            # Prefer the assistant's CameraPool. On the Pi5 orchestrator this
+            # is a picamera2-backed source for the Reachy head camera (the
+            # daemon has released /api/media/release, so reachy.media.get_frame
+            # would not work anyway). On Jetson with a remote daemon this
+            # is whatever USB camera the assistant was configured with.
+            if _camera_pool_ref is not None:
                 for cam in _camera_pool_ref.list_cameras():
                     frame = _camera_pool_ref.capture_frame(cam.name)
                     if frame is not None:
                         break
+
+            # Fallback: ask the SDK directly. Only meaningful when the daemon
+            # still owns media (media_backend != "no_media").
+            if frame is None:
+                try:
+                    reachy = _get_reachy()
+                    frame = reachy.media.get_frame()
+                except Exception:
+                    pass
 
             if frame is None:
                 return "Could not capture camera frame. No camera available."
@@ -452,12 +546,18 @@ def register_tools(registry, context=None):
         try:
             reachy = _get_reachy()
             if action in ("wake", "on", "wake_up"):
+                # The SDK's wake_up() only plays the wake animation; motors
+                # must be enabled separately, otherwise the move renders to
+                # nothing and the robot stays slumped.
+                reachy.enable_motors()
                 reachy.wake_up()
-                # After wake, return to neutral with breathing
                 _motion_manager.submit_pose(Pose(), duration=0.5)
                 return "Reachy is awake and ready."
             elif action in ("sleep", "off", "go_to_sleep"):
+                # goto_sleep animates to the sleep pose. Disable motors
+                # afterward so the head doesn't fight gravity while parked.
                 reachy.goto_sleep()
+                reachy.disable_motors()
                 return "Reachy is going to sleep."
             else:
                 return f"Unknown action '{action}'. Try: wake or sleep."
@@ -473,6 +573,17 @@ def register_tools(registry, context=None):
     ) -> str:
         response = response.lower().strip()
         if response in ("yes", "nod", "agree"):
+            # yeah_nod is a livelier choice than the metronome-style nod
+            # we used to hand-roll; fall back to simple_nod or a yes
+            # emotion if the dance library missed.
+            move = _moves.lookup_dance("yeah_nod") or _moves.lookup_emotion("yes")
+            if move:
+                _ensure_motors_enabled()
+                ds = DANCES_DATASET if move in _moves.dances else EMOTIONS_DATASET
+                _daemon_post(encoded_dataset_path(ds, move))
+                _broadcast({"type": "nod", "value": "yes", "move": move})
+                return f"Nodding yes ({move})."
+            # Hand-rolled fallback.
             keyframes = []
             for _ in range(3):
                 keyframes.append((Pose(pitch=-15), 0.15))
@@ -481,6 +592,12 @@ def register_tools(registry, context=None):
             _motion_manager.submit_primary(MotionSequence(keyframes))
             return "Nodding yes."
         elif response in ("no", "shake", "disagree"):
+            move = _moves.lookup_emotion("no")
+            if move:
+                _ensure_motors_enabled()
+                _daemon_post(encoded_dataset_path(EMOTIONS_DATASET, move))
+                _broadcast({"type": "nod", "value": "no", "move": move})
+                return f"Shaking head no ({move})."
             keyframes = []
             for _ in range(3):
                 keyframes.append((Pose(yaw=-15), 0.15))

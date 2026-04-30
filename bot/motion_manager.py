@@ -166,9 +166,9 @@ class BreathingMotion(SecondaryMotion):
 
     def __init__(
         self,
-        pitch_amplitude: float = 0.8,
+        pitch_amplitude: float = 2.5,
         pitch_freq: float = 0.25,
-        antenna_amplitude: float = 2.0,
+        antenna_amplitude: float = 8.0,
         antenna_freq: float = 0.15,
     ):
         self._pitch_amp = pitch_amplitude
@@ -201,8 +201,8 @@ class ReactiveListeningMotion(SecondaryMotion):
 
     _POSES = {
         "idle": Pose(),
-        "listening": Pose(pitch=-2, left_antenna=0, right_antenna=-25),  # one ear up, one cocked back (attentive)
-        "processing": Pose(pitch=-3, yaw=3, roll=-2, left_antenna=-15, right_antenna=5),  # curious head tilt
+        "listening": Pose(pitch=-5, left_antenna=10, right_antenna=-35),  # attentive: head up, one ear cocked
+        "processing": Pose(pitch=-8, yaw=8, roll=-5, left_antenna=-25, right_antenna=10),  # curious head tilt
         "speaking": Pose(),  # audio-reactive sway handles this
     }
 
@@ -236,10 +236,10 @@ class AudioReactiveSway(SecondaryMotion):
         self._lock = threading.Lock()
 
         # Oscillator parameters: (frequency_hz, max_amplitude_degrees)
-        self._pitch_osc = (2.2, 2.0)
-        self._yaw_osc = (0.6, 3.0)
-        self._roll_osc = (1.3, 1.5)
-        self._antenna_osc = (0.8, 5.0)
+        self._pitch_osc = (2.2, 5.0)
+        self._yaw_osc = (0.6, 8.0)
+        self._roll_osc = (1.3, 4.0)
+        self._antenna_osc = (0.8, 15.0)
 
         # Random phase offsets for non-repetitive motion
         import random
@@ -436,8 +436,13 @@ class MotionManager:
             # Short duration — we're updating at 50Hz, SDK interpolates
             reachy.goto_target(head=head_pose, antennas=antennas, duration=0.04)
             self._consecutive_errors = 0
-        except Exception:
+        except Exception as e:
             self._consecutive_errors += 1
+            if self._consecutive_errors <= 3 or self._consecutive_errors == 10:
+                import sys, traceback
+                print(f"MotionManager: SDK error #{self._consecutive_errors}: {e}", file=sys.stderr, flush=True)
+                if self._consecutive_errors == 1:
+                    traceback.print_exc(file=sys.stderr)
             if self._consecutive_errors == 10:
                 import sys
                 print("MotionManager: 10 consecutive SDK errors — robot may be disconnected", file=sys.stderr)

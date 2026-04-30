@@ -1,0 +1,81 @@
+# ── Thor as model server for split-deployment (A-OnPi) ─────────────────
+#
+# Brings up vLLM + jetson-assistant in *serve* mode. The Pi5 orchestrator
+# (running on the Reachy Mini) connects here for STT/TTS/LLM inference.
+#
+# On Thor:
+#   docker compose -f docker-compose.thor-serve.yml up -d
+#   docker compose -f docker-compose.thor-serve.yml logs -f assistant-server
+#   # Wait ~5min for vLLM to load + STT/TTS preloads to complete.
+#
+# On the Reachy Mini Pi:
+#   /home/pollen/dn/reachy-mini/scripts/run-on-pi.sh
+#
+# No mic/camera/speaker is mounted — Thor is pure compute, all I/O lives
+# on the Reachy Pi.
+#
+# Tip: `sudo sysctl -w vm.drop_caches=3` before starting to reclaim GPU
+# memory from previous runs.
+
+x-common: &common
+  runtime: nvidia
+  network_mode: host
+  ipc: host
+  restart: unless-stopped
+  ulimits:
+    memlock: -1
+    stack: 67108864
+
+volumes:
+  hf-cache:
+    external: true
+    name: reachy-mini_hf-cache
+
+services:
+  vllm:
+    <<: *common
+    image: ghcr.io/nvidia-ai-iot/vllm:latest-jetson-thor
+    container_name: thor-serve-vllm
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    command: >
+      vllm serve nvidia/Qwen2.5-VL-7B-Instruct-NVFP4
+      --host 0.0.0.0 --port 8001
+      --max-model-len 4096
+      --gpu-memory-utilization 0.3
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8001/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+
+  assistant-server:
+    <<: *common
+    image: ghcr.io/amarrmb/reachy-mini:thor
+    container_name: thor-serve-assistant
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+      - /usr/lib/aarch64-linux-gnu:/host-libs:ro
+      - /usr/local/cuda:/usr/local/cuda:ro
+    environment:
+      - TORCH_COMPILE_DISABLE=1
+      - LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/host-libs:/host-libs/libcudss/13:/usr/local/cuda/lib64:/usr/local/cuda/compat
+      # Preload only the STT (Nemotron). Kokoro preload pulls every voice
+      # from HuggingFace and currently 404s on serena.pt; the TTS will
+      # lazy-load on first /tts/synthesize call (with af_heart by default).
+      - JETSON_ASSISTANT_PRELOAD_STT=nemotron
+    depends_on:
+      vllm:
+        condition: service_healthy
+    # The image's ENTRYPOINT is `docker-entrypoint.sh`. The image was built
+    # before `serve` mode required python-multipart (needed by FastAPI
+    # `Form`/`UploadFile` routes in /stt and /tts), so we install it
+    # at container start. Once an updated image ships this can become
+    # the bare command line.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        pip install --quiet python-multipart || true
+        exec /usr/local/bin/docker-entrypoint.sh serve --host 0.0.0.0 --port 8080

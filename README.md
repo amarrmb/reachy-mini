@@ -1,14 +1,27 @@
 # Reachy Mini Voice Assistant
 
 Give your [Reachy Mini](https://www.pollen-robotics.com/reachy-mini/) a voice.
-Fully offline on NVIDIA Jetson Thor — zero cloud, zero cost per query.
+Fully offline on NVIDIA Jetson — zero cloud, zero cost per query.
 
+Two deployment topologies, same brain:
+
+**Embodied (recommended for real Reachy Mini Wireless):**
 ```
-Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
+Reachy mic ─┐                                              ┌─→ Reachy speaker
+            │  WS/HTTP                              WS/HTTP│
+Reachy cam ─┼─────► Jetson Thor: Nemotron STT ─→ vLLM ─→ Kokoro TTS
+            │       (jetson-assistant serve, port 8080)   │
+Reachy Pi5 ─┴── tool calls ─→ Reachy SDK (localhost) ─→ motors
+   (orchestrator + lifecycle + picamera2 + sounddevice)
+```
+
+**Standalone (any robot via WebSocket — sim or remote daemon):**
+```
+Jetson mic → Nemotron STT → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Jetson speaker
                                     ↓ tool calls
                               bot/reachy_tools.py
-                                    ↓ Zenoh
-                            Reachy Mini (sim or real)
+                                    ↓ WebSocket (reachy-mini SDK 1.7.0)
+                            Reachy Mini daemon (sim or real)
 ```
 
 9 robot tools, 50Hz MotionManager, multi-camera vision. Sub-second end-to-end.
@@ -18,22 +31,63 @@ Mic → Nemotron STT (24ms) → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Speaker
 
 ## Try It
 
-Jetson Thor runs voice AI (needs GPU). The robot daemon runs separately — either as a simulator on your laptop or on the real robot.
+### Embodied — brain on Thor, I/O on Reachy (A-OnPi)
 
-### Step 1: Start the robot daemon
+This is the most natural deployment for a real Reachy Mini Wireless: the
+robot's onboard Pi5 captures audio + video, talks to Thor over the LAN
+for inference, and plays the response back through Reachy's own speaker.
+Thor stays mic/camera/speaker-free — pure compute.
 
-**Option A — Simulation (no robot needed):**
+**On Jetson Thor (model server):**
+```bash
+sudo sysctl -w vm.drop_caches=3
+docker compose -f docker-compose.thor-serve.yml up -d   # ~12GB image already cached;
+                                                         # vLLM/Nemotron/Kokoro preload ~5min
+docker compose -f docker-compose.thor-serve.yml logs -f assistant-server
+```
+
+**On the Reachy Mini Pi5 (orchestrator):**
+```bash
+# One-time setup (rsync this repo + jetson-assistant to /home/pollen/dn/,
+# then create the venv — see scripts/run-on-pi.sh for details).
+sudo apt install python3-picamera2
+python3 -m venv --system-site-packages /home/pollen/dn/orch-venv
+/home/pollen/dn/orch-venv/bin/pip install httpx sounddevice openai opencv-python-headless \
+    "reachy-mini>=1.7.0" pydantic fastapi typer pyyaml
+/home/pollen/dn/orch-venv/bin/pip install --no-deps -e /home/pollen/dn/jetson-assistant
+/home/pollen/dn/orch-venv/bin/pip install --no-deps -e /home/pollen/dn/reachy-mini
+
+# Each session:
+JA_SERVER_HOST=<thor-ip> /home/pollen/dn/reachy-mini/scripts/run-on-pi.sh
+```
+
+The launcher posts `POST /api/media/release` to the Reachy daemon (so it
+can grab the camera + mic), runs the assistant pointed at Thor, and
+posts `/api/media/acquire` on shutdown.
+
+Now talk to Reachy directly — its onboard mic listens, its onboard
+speaker replies, its head camera answers "what do you see?". Thor is
+just a model server on the network.
+
+### Standalone — Jetson does everything (legacy / sim)
+
+Use this when you want the brain and I/O on the same Jetson and Reachy
+is just a remote motion endpoint. Works with the MuJoCo simulator too.
+
+**Step 1 — start the robot daemon:**
+
+*Option A — Simulation (no robot needed):*
 ```bash
 # On your laptop
 pip install reachy-mini[mujoco]
 reachy-mini-daemon --sim
 ```
 
-**Option B — Real Reachy Mini:** Power it on — the daemon auto-starts on the robot.
+*Option B — Real Reachy Mini:* Power it on — the daemon auto-starts on the robot.
 
-### Step 2: Start voice AI on Jetson
+**Step 2 — start the voice AI on Jetson:**
 
-Set `REACHY_HOST` to wherever the daemon is running (your laptop IP for sim, or the robot IP for real hardware).
+Set `REACHY_HOST` to wherever the daemon is running.
 
 ```bash
 sudo sysctl -w vm.drop_caches=3
@@ -83,13 +137,17 @@ Configured via YAML files in `configs/`:
 | `stt_backend` | `nemotron` | STT engine |
 | `llm_backend` | `vllm` | LLM backend |
 | `external_tools` | `[reachy_tools]` | Tool plugin modules |
+| `camera_backend` | `v4l2` | `v4l2` (USB / cv2.VideoCapture) or `picamera2` (Pi CSI cameras — Reachy head cam) |
+| `use_server` | `false` | When `true`, route STT/TTS/LLM to a remote `jetson-assistant serve` (used by the embodied A-OnPi deployment) |
 
 Environment variables:
 
 | Variable | Description |
 |----------|-------------|
-| `ALSA_CARD` | Audio device name from `aplay -l` (e.g. `USB`, `Jabra`) |
-| `REACHY_HOST` | Remote daemon IP (empty = localhost) |
+| `ALSA_CARD` | Audio device name from `aplay -l` (e.g. `USB`, `Jabra`) — Jetson-side audio |
+| `REACHY_HOST` | Remote Reachy daemon hostname/IP (empty = `localhost`, used by the orchestrator on the Pi5) |
+| `JA_SERVER_HOST` | Remote `jetson-assistant serve` host for the Pi5 launcher (default `10.0.0.2`) |
+| `JA_SERVER_PORT` | Remote `jetson-assistant serve` port (default `8080`) |
 | `BOOTH_MODE=1` | Proactive booth greetings |
 | `REACHY_BROADCAST=1` | UDP broadcast for dual-robot mode |
 
@@ -164,7 +222,7 @@ Browser ──WebSocket──► PersonaPlex (Jetson GPU)
                            │ on_audio_frame
                            ▼
                        MotionManager (50Hz)
-                           │ Zenoh
+                           │ WebSocket (reachy-mini SDK)
                            ▼
                        Reachy Mini (sim or real)
 ```
@@ -224,5 +282,3 @@ Apache 2.0 — See [LICENSE](LICENSE)
 
 - [Pollen Robotics](https://www.pollen-robotics.com/) — Reachy Mini hardware + SDK
 - [jetson-assistant](https://github.com/amarrmb/jetson-assistant) — voice + vision engine
-
-Built by [DeviceNexus.ai](https://devicenexus.ai).

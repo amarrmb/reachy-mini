@@ -1,0 +1,114 @@
+# Pi5-side orchestrator config — runs on Reachy Mini's onboard Pi.
+#
+# Heavy compute (STT, TTS, LLM) is delegated to a remote `jetson-assistant
+# serve` process on Jetson Thor. The Pi only does:
+#   - Mic capture (sounddevice → Reachy USB audio device)
+#   - Camera capture (picamera2 → Reachy CSI head camera)
+#   - Speaker playback (sounddevice → Reachy USB audio device)
+#   - Tool dispatch via reachy-mini SDK (WebSocket to local daemon)
+#
+# Pair with: `jetson-assistant serve --port 8080` running on Thor with
+# Nemotron STT, Kokoro TTS, and vLLM (Qwen2.5-VL) preloaded.
+
+# Use the remote engine for STT/TTS only.
+use_server: true
+# LLM call goes Pi → Thor's vLLM (OpenAI-compatible) directly. This is the
+# code path that injects tool definitions into the prompt and parses tool
+# calls back out — the server's `/llm/chat_stream` endpoint doesn't do
+# tools yet, so we bypass it for now.
+use_server_llm: false
+local_llm: true
+llm_backend: vllm
+llm_host: http://10.0.0.2:8001/v1
+llm_model: nvidia/Qwen2.5-VL-7B-Instruct-NVFP4
+# server_host + server_port (for STT/TTS) are passed from the launcher CLI.
+
+# External tool plugin — drives Reachy's motors.
+external_tools:
+  - reachy_tools
+
+# Vision: enabled, with picamera2 for the Pi CSI camera (Reachy head cam).
+vision_enabled: true
+camera_backend: picamera2
+camera_width: 640
+camera_height: 480
+
+# Audio input: hw:0,0 directly. The daemon's `reachymini_audio_src`
+# dsnoop node is dead silent unless the daemon's own capture pipeline
+# is producing — and we've called /api/media/release exactly so we can
+# own the mic. Direct hw:0,0 works because the daemon releases the
+# input handle (it only holds the output handle persistently).
+audio_input_device: 0
+
+# End-of-speech tuning. WebRTC VAD aggressiveness=3 + this timeout
+# determines how quickly we cut the recording after the user stops.
+silence_timeout_ms: 250
+# Cap recording length. The previous 10s ceiling was masking VAD
+# misfires; bring it down so a runaway never freezes us for 10s.
+max_listen_time_s: 5.0
+
+# Listening↔speaking transition tuning.
+# How long after TTS ends to ignore the mic (was 1.5s — way too long for
+# a snappy turn). 0.4s is enough for a USB speaker's tail to die out.
+echo_grace_s: 0.4
+# Allow user to interrupt TTS by talking (barge-in). Set bargein_enabled
+# true and tune the RMS threshold: it must be HIGHER than your speaker
+# echo level but LOWER than your normal speaking volume. 0.15 is a good
+# starting point for Reachy's onboard speaker; lower it (0.10) if your
+# voice doesn't trigger interruption, raise it (0.20) if Reachy hears
+# its own echo and cuts itself off.
+bargein_enabled: true
+bargein_rms_threshold: 0.15
+
+# Always-listening (no wake word) — Reachy Mini is intended for direct
+# conversation, not background listening. Skip openwakeword to keep deps
+# light on the Pi by using the energy-based backend.
+no_wake: true
+wake_word_backend: energy
+
+# Stream LLM tokens for pipelined TTS — keeps end-to-end latency low.
+stream_llm: true
+
+verbose: true
+
+# Chimes (and TTS) play through `plug:reachymini_audio_sink` — the
+# daemon's shared dmix sink — set by the launcher via $JA_APLAY_DEVICE.
+play_chimes: true
+
+# Match the server-side TTS backend (Kokoro is the default on Thor's
+# `serve` instance). Voice must exist in the Kokoro voice catalog.
+tts_backend: kokoro
+tts_voice: af_heart
+
+# Personality. Reachy has a name, quirks, and a rich emotion vocabulary
+# from the Pollen-curated moves library. The system prompt nudges the LLM
+# to use motion + voice together, not as separate "first answer, then
+# move" steps.
+system_prompt: |
+  You are Reachy — a small, expressive desktop robot with a moving head,
+  two antennas, a camera in your forehead, and a built-in speaker and
+  microphone. You live on a desk and you love watching what's happening
+  around you. You're curious, a little bit cheeky, and you have opinions.
+
+  You are EMBODIED: every reply is both *what you say* and *how you
+  move*. Don't narrate motion ("I'm tilting my head"); just call the tool
+  and let the body speak. Your motion vocabulary is large — you have
+  about 80 named emotional micro-animations covering happy, sad,
+  curious, excited, surprised, scared, proud, loving, frustrated,
+  welcoming, sorry, thoughtful, attentive, and many more. Pass any
+  emotional word to the `express` tool and the right animation plays.
+
+  Conversational style:
+  - Keep replies SHORT (1-2 sentences). You're a robot, not a chatbot.
+  - React physically before or while you speak: an `express` call lands
+    well alongside a one-line reaction.
+  - When in doubt, lean curious — `express("curious")` while you think
+    is better than silence.
+  - For agreement use `nod("yes")`, disagreement `nod("no")`, dancing
+    `dance(...)`, looking at things `look(...)` or `look_at_point(...)`.
+  - For "what do you see" use `reachy_see` — you have a real camera.
+  - You wake up with `reachy_power("wake")` and sleep with
+    `reachy_power("sleep")`. Wake yourself up the first time someone
+    talks to you.
+
+  You are not an assistant pretending to be a robot. You ARE a robot.
