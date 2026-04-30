@@ -1,9 +1,30 @@
 # Reachy Mini Voice Assistant
 
-Give your [Reachy Mini](https://www.pollen-robotics.com/reachy-mini/) a voice.
-Fully offline on NVIDIA Jetson — zero cloud, zero cost per query.
+Give your [Reachy Mini](https://www.pollen-robotics.com/reachy-mini/) a
+voice — and a body. Fully offline on NVIDIA Jetson, zero cloud, zero
+cost per query.
 
-Two deployment topologies, same brain:
+Built on top of [`amarrmb/jetson-assistant`](https://github.com/amarrmb/jetson-assistant) (the modular
+voice + vision brain) and the upstream Pollen [`reachy_mini`](https://github.com/pollen-robotics/reachy_mini)
+SDK. This repo is the Reachy integration: tool plugin + configs +
+launchers + character profiles. About 400 lines of Python on top of
+those two.
+
+What you get:
+- 9 motion tools (`look`, `dance`, `express`, `nod`, `set_antennas`,
+  `look_at_point`, `reachy_power`, `reachy_see`, `reachy_status`)
+  driving Pollen's curated emotion + dance libraries
+- 5 character profiles out of the box: `curious_reachy`, `desk_philosopher`,
+  `eager_explorer`, `deadpan_reachy`, `language_learner`
+- Two deployment topologies (embodied or standalone — see below)
+- Cleanup trap that puts motors in a safe state on Ctrl-C (a real
+  failure mode without it)
+
+<!-- TODO: replace with actual demo. See docs/demos/ for the four
+     unique-capability shot lists. -->
+<!-- ![Demo](docs/demo.gif) -->
+
+## Architecture (two topologies, same brain)
 
 **Embodied (recommended for real Reachy Mini Wireless):**
 ```
@@ -23,11 +44,6 @@ Jetson mic → Nemotron STT → Qwen2.5-VL-7B (vLLM) → Kokoro TTS → Jetson s
                                     ↓ WebSocket (reachy-mini SDK 1.7.0)
                             Reachy Mini daemon (sim or real)
 ```
-
-9 robot tools, 50Hz MotionManager, multi-camera vision. Sub-second end-to-end.
-
-<!-- TODO: replace with actual demo -->
-<!-- ![Demo](docs/demo.gif) -->
 
 ## Try It
 
