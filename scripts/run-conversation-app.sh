@@ -44,13 +44,24 @@ shutdown_clean() {
 }
 trap shutdown_clean EXIT INT TERM
 
+# Wake the robot before the app takes over media. The conversation app
+# never enables motors itself — without this, the daemon stays in
+# `motors=disabled` / `backend.ready=false`, so the head never moves
+# and tool calls like play_emotion/dance silently no-op.
+echo "[run-conversation-app] waking robot..."
+curl -sS -m 5 -X POST "${DAEMON_BASE}/api/motors/set_mode/enabled" >/dev/null 2>&1 || true
+curl -sS -m 8 -X POST "${DAEMON_BASE}/api/move/play/wake_up" >/dev/null 2>&1 || true
+sleep 1
+
 # shellcheck disable=SC1091
 source "$REPO/.venv/bin/activate"
 cd "$REPO"
 
 # --wireless-version --on-device tells the app to use the GStreamer media
 # backend that talks to the local Reachy daemon (no WebRTC indirection).
-exec reachy-mini-conversation-app \
+# Note: do NOT `exec` here — exec replaces the bash process and the EXIT
+# trap above never fires, leaving motors latched after Ctrl-C.
+reachy-mini-conversation-app \
     --wireless-version \
     --on-device \
     "$@"
